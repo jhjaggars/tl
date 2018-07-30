@@ -4,6 +4,7 @@ extern crate serde_derive;
 extern crate chrono;
 extern crate clap;
 extern crate chrono_humanize;
+extern crate colored;
 extern crate rand;
 extern crate serde;
 extern crate serde_json;
@@ -11,6 +12,7 @@ extern crate serde_json;
 use clap::{Arg, App, SubCommand};
 use chrono::prelude::*;
 use chrono_humanize::HumanTime;
+use colored::*;
 use rand::{thread_rng, Rng};
 use std::collections::{HashSet, HashMap};
 use std::fs;
@@ -77,10 +79,11 @@ impl TodoList {
         items.sort_by_key(|item| item.attr(by));
         for i in items {
             println!(
-                "{} {} created {}",
-                i.index,
+                "{} {} {} {}",
+                i.index.to_string().cyan(),
+                i.get_done(),
                 i.description,
-                HumanTime::from(i.created)
+                HumanTime::from(i.created).to_string().black().bold()
             );
         }
     }
@@ -139,6 +142,13 @@ impl TodoItem {
             "created" => self.created.to_string(),
             "updated" => self.updated.to_string(),
             _ => self.created.to_string(),
+        }
+    }
+
+    fn get_done(&self) -> colored::ColoredString {
+        match self.done {
+            true => "\u{2611}".green().bold(),
+            false => "\u{2610}".white(),
         }
     }
 }
