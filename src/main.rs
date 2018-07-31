@@ -1,4 +1,3 @@
-#![feature(extern_prelude)]
 extern crate chrono;
 extern crate chrono_humanize;
 extern crate colored;
@@ -39,13 +38,13 @@ struct Args {
     flag_file: String,
     cmd_add: bool,
     cmd_done: bool,
-    cmd_remove: bool
+    cmd_remove: bool,
 }
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-                      .and_then(|d| d.deserialize())
-                      .unwrap_or_else(|e| e.exit());
+        .and_then(|d| d.deserialize())
+        .unwrap_or_else(|e| e.exit());
 
     let mut todo_list = todo::TodoList::read(&args.flag_file);
 

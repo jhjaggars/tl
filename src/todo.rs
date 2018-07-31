@@ -1,8 +1,10 @@
 use chrono::prelude::*;
 use chrono_humanize::HumanTime;
-use colored::*;
+use colored;
+use colored::Colorize;
 use rand::{thread_rng, Rng};
-use std::collections::{HashSet, HashMap};
+use serde_json;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io;
 use std::iter::FromIterator;
@@ -10,31 +12,32 @@ use std::iter::FromIterator;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TodoList {
     items: HashMap<char, TodoItem>,
-    file: String
+    file: String,
 }
 
 impl TodoList {
     fn new() -> TodoList {
-        TodoList { 
+        TodoList {
             items: HashMap::new(),
-            file: "./todo.json".to_string()
+            file: "./todo.json".to_string(),
         }
     }
 
     pub fn read(path: &str) -> TodoList {
         match fs::read(path) {
-            Ok(contents) => {
-                TodoList {
-                    items: serde_json::from_str(&String::from_utf8_lossy(&contents)).unwrap(),
-                    file: path.to_string()
-                }
-            }
+            Ok(contents) => TodoList {
+                items: serde_json::from_str(&String::from_utf8_lossy(&contents)).unwrap(),
+                file: path.to_string(),
+            },
             Err(_) => TodoList::new(),
         }
     }
 
     pub fn write(&self) {
-        fs::write(&self.file, serde_json::to_string_pretty(&self.items).unwrap()).unwrap();
+        fs::write(
+            &self.file,
+            serde_json::to_string_pretty(&self.items).unwrap(),
+        ).unwrap();
     }
 
     pub fn add_many(&mut self, items: &Vec<String>) {
@@ -48,8 +51,8 @@ impl TodoList {
                                 break;
                             }
                             self.add(buffer.drain(..).collect());
-                        },
-                        Err(_error) => break
+                        }
+                        Err(_error) => break,
                     }
                 }
             } else {
@@ -61,7 +64,8 @@ impl TodoList {
 
     fn add(&mut self, description: String) {
         let index = self.get_next_index();
-        self.items.insert(index, TodoItem::new(&description.trim_right(), index));
+        self.items
+            .insert(index, TodoItem::new(&description.trim_right(), index));
     }
 
     fn get_next_index(&self) -> char {
