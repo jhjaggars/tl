@@ -51,7 +51,6 @@ fn main() {
 
     if args.cmd_add {
         todo_list.add_many(&args.arg_task);
-        println!("Ok, added {} items.", args.arg_task.len());
     } else if args.cmd_done {
         todo_list.done_many(args.arg_index);
     } else if args.cmd_remove {

@@ -4,6 +4,7 @@ use colored::*;
 use rand::{thread_rng, Rng};
 use std::collections::{HashSet, HashMap};
 use std::fs;
+use std::io;
 use std::iter::FromIterator;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,14 +39,29 @@ impl TodoList {
 
     pub fn add_many(&mut self, items: &Vec<String>) {
         for i in items {
-            self.add(i.to_string());
+            if i == "-" {
+                let mut buffer = String::new();
+                loop {
+                    match io::stdin().read_line(&mut buffer) {
+                        Ok(n) => {
+                            if n == 0 {
+                                break;
+                            }
+                            self.add(buffer.drain(..).collect());
+                        },
+                        Err(_error) => break
+                    }
+                }
+            } else {
+                self.add(i.to_string());
+            }
         }
         self.write();
     }
 
     fn add(&mut self, description: String) {
         let index = self.get_next_index();
-        self.items.insert(index, TodoItem::new(&description, index));
+        self.items.insert(index, TodoItem::new(&description.trim_right(), index));
     }
 
     fn get_next_index(&self) -> char {
