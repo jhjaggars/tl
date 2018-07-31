@@ -31,15 +31,15 @@ impl TodoList {
         fs::write(path, serde_json::to_string_pretty(&self.items).unwrap()).unwrap();
     }
 
-    pub fn add_many(&mut self, items: &Vec<&str>) {
+    pub fn add_many(&mut self, items: &Vec<String>) {
         for i in items {
-            self.add(i);
+            self.add(i.to_string());
         }
     }
 
-    fn add(&mut self, description: &str) {
+    fn add(&mut self, description: String) {
         let index = self.get_next_index();
-        self.items.insert(index, TodoItem::new(description, index));
+        self.items.insert(index, TodoItem::new(&description, index));
     }
 
     fn get_next_index(&self) -> char {
@@ -76,23 +76,22 @@ impl TodoList {
         }
     }
 
-    fn remove(&mut self, index: &str) {
-        let item = self.items.remove(&index.chars().next().unwrap());
+    fn remove(&mut self, index: char) {
+        let item = self.items.remove(&index);
         match item {
             None => println!("Couldn't find an item at index '{}' to remove.", index),
             Some(i) => println!("Ok. Removing item {} '{}'", index, i.description),
         }
     }
 
-    pub fn remove_many(&mut self, items: &Vec<&str>) {
+    pub fn remove_many(&mut self, items: Vec<char>) {
         for i in items {
             self.remove(i);
         }
     }
 
-    pub fn done_many(&mut self, items: &Vec<&str>) {
-        for i in items {
-            let ch = i.chars().next().unwrap();
+    pub fn done_many(&mut self, items: Vec<char>) {
+        for ch in items {
             let item = self.items.get_mut(&ch);
             match item {
                 Some(el) => el.done = !el.done,
