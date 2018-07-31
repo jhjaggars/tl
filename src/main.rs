@@ -81,7 +81,11 @@ fn main() {
             todo_list.done_many(&items);
             todo_list.write("tl.json");
         }
-        None => (),
+        None => {
+            let by = matches.value_of("by").unwrap_or("done");
+            let todo_list = todo::TodoList::read("tl.json");
+            todo_list.show(by);
+        },
         _ => (),
     }
 }
