@@ -3,6 +3,7 @@ extern crate chrono;
 extern crate chrono_humanize;
 extern crate clap;
 extern crate colored;
+extern crate dirs;
 extern crate rand;
 extern crate serde;
 #[macro_use]
@@ -27,6 +28,8 @@ fn main() {
         .version("0.1.0")
         .author("Jesse Jaggars <jhjaggars@gmail.com>")
         .about("todo list")
+        .arg(Arg::with_name("file").short("f").long("file").value_name("FILE")
+             .takes_value(true).help("todo list file"))
         .subcommand(
             SubCommand::with_name("show")
                 .arg(Arg::with_name("by").help("sort by column (default done)"))
@@ -55,35 +58,40 @@ fn main() {
         )
         .get_matches();
 
+    let default_file = match dirs::home_dir() {
+        Some(path) => format!("{}/.tl.json", path.to_str().unwrap()),
+        None => "tl.json".to_string()
+    };
+    let _file = matches.value_of("file").unwrap_or(&default_file);
 
     match matches.subcommand_name() {
         Some("show") => {
             let by = matches.value_of("by").unwrap_or("done");
-            let todo_list = todo::TodoList::read("tl.json");
+            let todo_list = todo::TodoList::read(_file);
             todo_list.show(by);
         }
         Some("add") => {
             let items = _get_all(&matches, "add", "item");
-            let mut todo_list = todo::TodoList::read("tl.json");
+            let mut todo_list = todo::TodoList::read(_file);
             todo_list.add_many(&items);
             todo_list.write("tl.json");
             println!("Ok, added {} items.", items.len());
         }
         Some("remove") => {
             let items = _get_all(&matches, "remove", "index");
-            let mut todo_list = todo::TodoList::read("tl.json");
+            let mut todo_list = todo::TodoList::read(_file);
             todo_list.remove_many(&items);
             todo_list.write("tl.json");
         }
         Some("done") => {
             let items = _get_all(&matches, "done", "index");
-            let mut todo_list = todo::TodoList::read("tl.json");
+            let mut todo_list = todo::TodoList::read(_file);
             todo_list.done_many(&items);
             todo_list.write("tl.json");
         }
         None => {
             let by = matches.value_of("by").unwrap_or("done");
-            let todo_list = todo::TodoList::read("tl.json");
+            let todo_list = todo::TodoList::read(_file);
             todo_list.show(by);
         },
         _ => (),
