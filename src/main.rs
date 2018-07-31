@@ -25,10 +25,10 @@ Usage:
   tl --version
 
 Options:
-  --by=<by>     Sort by value.
-  --file=FILE   Todo list file [default: ./todo.json].
-  -h --help     Show this screen.
-  --version     Show version.
+  --by=<by>            Sort by value.
+  -f FILE --file=FILE  Todo list file [default: ./todo.json].
+  -h --help            Show this screen.
+  --version            Show version.
 ";
 
 #[derive(Debug, Deserialize)]
@@ -51,14 +51,11 @@ fn main() {
 
     if args.cmd_add {
         todo_list.add_many(&args.arg_task);
-        todo_list.write(&args.flag_file);
         println!("Ok, added {} items.", args.arg_task.len());
     } else if args.cmd_done {
         todo_list.done_many(args.arg_index);
-        todo_list.write(&args.flag_file);
     } else if args.cmd_remove {
         todo_list.remove_many(args.arg_index);
-        todo_list.write(&args.flag_file);
     } else {
         todo_list.show(&args.flag_by);
     }

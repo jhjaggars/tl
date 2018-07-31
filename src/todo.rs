@@ -9,11 +9,15 @@ use std::iter::FromIterator;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TodoList {
     items: HashMap<char, TodoItem>,
+    file: String
 }
 
 impl TodoList {
     fn new() -> TodoList {
-        TodoList { items: HashMap::new() }
+        TodoList { 
+            items: HashMap::new(),
+            file: "./todo.json".to_string()
+        }
     }
 
     pub fn read(path: &str) -> TodoList {
@@ -21,20 +25,22 @@ impl TodoList {
             Ok(contents) => {
                 TodoList {
                     items: serde_json::from_str(&String::from_utf8_lossy(&contents)).unwrap(),
+                    file: path.to_string()
                 }
             }
             Err(_) => TodoList::new(),
         }
     }
 
-    pub fn write(&self, path: &str) {
-        fs::write(path, serde_json::to_string_pretty(&self.items).unwrap()).unwrap();
+    pub fn write(&self) {
+        fs::write(&self.file, serde_json::to_string_pretty(&self.items).unwrap()).unwrap();
     }
 
     pub fn add_many(&mut self, items: &Vec<String>) {
         for i in items {
             self.add(i.to_string());
         }
+        self.write();
     }
 
     fn add(&mut self, description: String) {
@@ -88,6 +94,7 @@ impl TodoList {
         for i in items {
             self.remove(i);
         }
+        self.write();
     }
 
     pub fn done_many(&mut self, items: Vec<char>) {
@@ -98,6 +105,7 @@ impl TodoList {
                 None => println!("No item at index '{}'.", ch),
             }
         }
+        self.write();
     }
 }
 
