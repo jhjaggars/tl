@@ -9,9 +9,18 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use clap::{Arg, App, SubCommand};
+use clap::{Arg, App, SubCommand, ArgMatches};
 
 mod todo;
+
+fn _get_all<'a>(matches: &'a ArgMatches<'a>, subc: &str, argn: &str) -> Vec<&'a str> {
+    matches
+    .subcommand_matches(subc)
+    .unwrap()
+    .values_of(argn)
+    .unwrap()
+    .collect()
+}
 
 fn main() {
     let matches = App::new("tl")
@@ -54,35 +63,20 @@ fn main() {
             todo_list.show(by);
         }
         Some("add") => {
-            let items: Vec<&str> = matches
-                .subcommand_matches("add")
-                .unwrap()
-                .values_of("item")
-                .unwrap()
-                .collect();
+            let items = _get_all(&matches, "add", "item");
             let mut todo_list = todo::TodoList::read("tl.json");
             todo_list.add_many(&items);
             todo_list.write("tl.json");
             println!("Ok, added {} items.", items.len());
         }
         Some("remove") => {
-            let items: Vec<&str> = matches
-                .subcommand_matches("remove")
-                .unwrap()
-                .values_of("index")
-                .unwrap()
-                .collect();
+            let items = _get_all(&matches, "remove", "index");
             let mut todo_list = todo::TodoList::read("tl.json");
             todo_list.remove_many(&items);
             todo_list.write("tl.json");
         }
         Some("done") => {
-            let items: Vec<&str> = matches
-                .subcommand_matches("done")
-                .unwrap()
-                .values_of("index")
-                .unwrap()
-                .collect();
+            let items = _get_all(&matches, "done", "index");
             let mut todo_list = todo::TodoList::read("tl.json");
             todo_list.done_many(&items);
             todo_list.write("tl.json");
