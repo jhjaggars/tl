@@ -9,6 +9,9 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::iter::FromIterator;
 
+const CHECKMARK: &'static str = "\u{2713}";
+const CIRCLE: &'static str = "\u{25cf}";
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TodoList {
     items: HashMap<char, TodoItem>,
@@ -23,18 +26,15 @@ impl TodoList {
         }
     }
 
-    pub fn read(path: &str) -> TodoList {
-        match fs::read(path) {
-            Ok(contents) => {
-                let _items = serde_json::from_str(&String::from_utf8_lossy(&contents))
-                    .expect("Data file failed to parse! Is it corrupt?");
-                TodoList {
-                    items: _items,
-                    file: path.to_string(),
-                }
-            }
-            Err(_) => TodoList::new(),
-        }
+    pub fn read(path: &str) -> TodoList{
+        fs::read(path).and_then(|contents| {
+            let _items = serde_json::from_str(&String::from_utf8_lossy(&contents))
+                .expect("Data file failed to parse! Is it corrupt?");
+            Ok(TodoList {
+                items: _items,
+                file: path.to_string(),
+            })
+        }).unwrap_or_else(|_e| TodoList::new())
     }
 
     pub fn write(&self) {
@@ -56,29 +56,23 @@ impl TodoList {
     }
 
     fn add(&mut self, description: String) {
-        let c = self.get_next_index().unwrap();
-        self.items
-            .insert(c, TodoItem::new(&description.trim_right(), c));
+        self.get_next_index().and_then(|c| {
+            self.items
+                .insert(c, TodoItem::new(&description.trim_right(), c))
+        });
     }
 
-    fn get_next_index(&self) -> Result<char, &'static str> {
-        let possibles: HashSet<char> = String::from(
-            "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        ).chars()
-            .collect();
-        let indices = self.items.keys().cloned().collect();
-        let choices: Vec<char> = possibles
-            .difference(&indices)
-            .cloned()
-            .collect::<Vec<char>>();
-        if choices.len() < 1 {
-            return Err(
-                "No more item indices remain!  You need to remove some things before adding more!",
-            );
-        }
+    fn get_used(&self) -> HashSet<char> {
+        self.items.keys().cloned().collect()
+    }
+
+    fn get_next_index(&self) -> Option<char> {
+        let possibles = HashSet::from_iter(
+            "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".chars(),
+        );
+        let choices: Vec<char> = possibles.difference(&self.get_used()).cloned().collect();
         let mut rng = thread_rng();
-        let choice: char = *rng.choose(&choices).unwrap();
-        return Ok(choice);
+        rng.choose(&choices).cloned()
     }
 
     pub fn show(&self, by: &str) {
@@ -107,13 +101,16 @@ impl TodoList {
         self.write();
     }
 
+    fn done(&mut self, c: char) {
+        match self.items.get_mut(&c) {
+            Some(el) => el.done = !el.done,
+            None => println!("No item at index '{}'.", c),
+        }
+    }
+
     pub fn done_many(&mut self, items: Vec<char>) {
         for ch in items {
-            let item = self.items.get_mut(&ch);
-            match item {
-                Some(el) => el.done = !el.done,
-                None => println!("No item at index '{}'.", ch),
-            }
+            self.done(ch);
         }
         self.write();
     }
@@ -152,17 +149,16 @@ impl TodoItem {
 
     fn get_done(&self) -> colored::ColoredString {
         match self.done {
-            true => "\u{2713}".green().bold(),
+            true => CHECKMARK.green().bold(),
             false => {
                 let now = Utc::now();
                 let elapsed = now.signed_duration_since(self.created);
-                let glyph = "\u{25cf}";
                 if elapsed.num_days() > 1 {
-                    glyph.red()
+                    CIRCLE.red()
                 } else if elapsed.num_hours() > 4 {
-                    glyph.yellow()
+                    CIRCLE.yellow()
                 } else {
-                    glyph.white()
+                    CIRCLE.white()
                 }
             }
         }
